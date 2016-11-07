@@ -6,6 +6,7 @@ Tested on Windows.
 # Todo
 - Test it. A lot.
 - Clean code.
+- Improve error management.
 - Anything else to improve it.
 
 # Requirements
