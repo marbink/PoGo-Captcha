@@ -46,7 +46,7 @@ def solveCaptchas(mode, username, password, location, captchakey2):
     print(mode)
     print(username)
     print(password + "|")
-    captchatimeout=3
+    captchatimeout=1000
     login_retry = 0
     
     user_agent = ("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_8_4) " + "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/29.0.1547.57 Safari/537.36")
