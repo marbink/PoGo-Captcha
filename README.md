@@ -10,8 +10,8 @@ Tested on Windows.
 - Anything else to improve it.
 
 # Requirements
-- Install Pikaptcha requirements.
-- Don't forget Chromedriver
+- pip install -r requirements.txt
+- Don't forget Chromedriver & PhantomJS (follow Pikaptcha guide)
 
 # How to use
 - Put accounts in accounts.csv like the example "ptc,username,password"
