@@ -5,6 +5,9 @@ Tested on Windows.
 
 # Todo
 - (WIP, no ETA) Implement the ability to save logs in a file & split accounts in different files to obtain three files: a file containing all the account that didn't had a captcha, a file with all the account that had a captcha and it has been solved, and a file containing all the accounts who had any sort of issue (login/captcha solving or anything else)
+- Implement PGM config.ini reading to import accounts
+- Implement reading location from accounts.csv, in this way every account can have a different location
+- Implement threads, in this way we could speed up the tool
 
 # Requirements
 - pip install -r requirements.txt
