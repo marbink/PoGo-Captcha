@@ -1,86 +1,150 @@
 import time
 import string
+import argparse
 from pgoapi import PGoApi
-from pgoapi.utilities import f2i
-from pgoapi import utilities as util
-from pgoapi.exceptions import AuthException, ServerSideRequestThrottlingException, NotLoggedInException
+#from pgoapi import utilities as util
+from pgoapi.exceptions import AuthException #, ServerSideRequestThrottlingException, NotLoggedInException
 from selenium import webdriver
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.by import By
-from selenium.common.exceptions import StaleElementReferenceException, TimeoutException
+from selenium.common.exceptions import TimeoutException #, StaleElementReferenceException
 from selenium.webdriver.common.desired_capabilities import DesiredCapabilities
 import urllib2
+import sys
 
-#Edit these!
-csv_file = "accounts.csv"
-captchakey2 = ""
-loc = "43.717497, 10.402206" #location
+config = None
+
+def init_config():
+    parser = argparse.ArgumentParser()
+
+    # Read passed in Arguments
+    parser.add_argument('-ac', '--accountcsv',
+                        help='Load accounts from CSV file containing "auth_service,username,passwd" lines')
+    parser.add_argument("-a", "--auth_service", help="Auth Service ('ptc' or 'google')")
+    parser.add_argument("-u", "--username", help="Username")
+    parser.add_argument("-p", "--password", help="Password")
+    parser.add_argument("-l", "--location", help="Location", required=True)
+    parser.add_argument("-px", "--proxy", help="Specify a socks5 proxy url", default=False)
+    parser.add_argument("-c", "--captchakey", help="2Captcha Api Key", default="")
+    parser.add_argument("-v", "--verbose", help="Show debug messages", action='store_true')
+    config = parser.parse_args()
+
+    # Checking arguments
+    if not config.accountcsv:
+        if not (config.username and config.password and config.auth_service):
+            parser.error("-ac/--accountcsv parameter or -u/--username + -p/--password + -a/--auth_service CANNOT be empty")
+        else:
+            if config.auth_service not in ['ptc', 'google']:
+                parser.error("Invalid auth service specified! ('ptc' or 'google')")
+
+    return config
 
 
+# Print functions
+def print_debug(string, username = None):
+    if not(config and config.verbose):
+        return
+    if username:
+        print("[DEBUG][{user}] {data}".format(user = username, data = string))
+    else:
+        print("[DEBUG] {data}".format(data = string))
+
+def print_info(string, username = None):
+    if username:
+        print("[ INFO][{user}] {data}".format(user = username, data = string))
+    else:
+        print("[ INFO] {data}".format(data = string))
+        
+def print_error(string):
+    print("[ERROR] {data}".format(data = string))
+
+              
 def openurl(address):
     try:
         urlresponse = urllib2.urlopen(address).read()
         return urlresponse        
     except urllib2.HTTPError, e:
-        print("HTTPError = " + str(e.code))
+        print_debug("HTTPError = " + str(e.code))
     except urllib2.URLError, e:
-        print("URLError = " + str(e.code))
+        print_debug("URLError = " + str(e.code))
     except Exception:
         import traceback
-        print("Generic Exception: " + traceback.format_exc())
-    print("Request to " + address + "failed.")    
+        print_debug("Generic Exception: " + traceback.format_exc())
+    print_error("Request to " + address + "failed.")    
     return "Failed"
 
 
-def activateUser(api, captchatoken):
-    #print ("Recaptcha token: {}".format(captchatoken))
+def activateUser(api, captchatoken, username):
+    print_debug("Recaptcha token: {}".format(captchatoken), username)
     req = api.create_request()
     req.verify_challenge(token = captchatoken)
     response = (":".join("{:02x}".format(ord(c)) for c in captchatoken))
     response = req.call()
-    print(response)
+    print_debug("Response:{}".format(response), username)
 
 
 def solveCaptchas(mode, username, password, location, captchakey2):
-    print(mode)
-    print(username)
-    print(password + "|")
     captchatimeout=1000
-    login_retry = 0
-    
+    max_login_retries = 5
+    #login_retry = 0
     user_agent = ("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_8_4) " + "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/29.0.1547.57 Safari/537.36")
-    api = PGoApi()
+    
     location = location.replace(" ", "")
     location = location.split(",")
+
+    api = PGoApi()
+    if config.proxy:
+        api.set_proxy({'http': config.proxy, 'https': config.proxy}) #Need this? Proxy is not setted with set_authentication?
+        
     api.set_position(float(location[0]), float(location[1]), 0.0)
-    while (login_retry < 3):
-        print("Login...")
-        if api.login(mode, username, password):
+
+    # Try to login (a few times, but don't get stuck here)
+    i = 0
+    while i < max_login_retries:
+        try:
+            if config.proxy:
+                api.set_authentication(provider=mode, username=username, password=password, proxy_config={'http': config.proxy, 'https': config.proxy})
+            else:
+                api.set_authentication(provider=mode, username=username, password=password)
             break
-        login_retry = login_retry + 1
-    if(login_retry == 3):
-        print(("Login failed for {user}. Check data and try again.").format(user = username))
-        return
+        except AuthException:
+            if i >= args.login_retries:
+                print_info('Exceeded login attempts. Skipping to next account.', username)
+                return
+            else:
+                i += 1
+                log.error('Failed to login to Pokemon Go with account %s. Trying again in %g seconds', account['username'], args.login_delay)
+                time.sleep(args.login_delay)
+
+    print_info("Login OK [{num} attempt(s)]".format(num = (i + 1)), username)
+    
+
     time.sleep(10)
     req = api.create_request()
     req.check_challenge()
     response = req.call()
-    
-    captcha_url = response['responses']['CHECK_CHALLENGE']['challenge_url'];
-    
+    captcha_url = None
+
+    try:
+        captcha_url = response['responses']['CHECK_CHALLENGE']['challenge_url'];
+    except Exception:
+        print_info('Something wrong happened getting captcha. Check account. Skipping...', username)
+        return
     
     if len(captcha_url) == 1:
-        print(("No captcha for user: {user}").format(user = username))
+        print_info("No captcha required", username)
         #skip, captcha not necessary
     else:
-        print(("Captcha required for user: {user}").format(user = username))
-	#print("CaptchaURL: {}".format(captcha_url))
+        print_info("Captcha required", username)
+	print_debug("CaptchaURL: {}".format(captcha_url), username)
+        
         if captchakey2 != "":
             dcap = dict(DesiredCapabilities.PHANTOMJS)
             dcap["phantomjs.page.settings.userAgent"] = user_agent
             driver = webdriver.PhantomJS(desired_capabilities=dcap)
         else:
+            print_info("You did not pass a 2captcha key. Please solve the captcha manually.", username)
             driver = webdriver.Chrome()
             driver.set_window_size(600, 600)
             
@@ -88,22 +152,23 @@ def solveCaptchas(mode, username, password, location, captchakey2):
         
         if captchakey2 == "":
             #Do manual captcha entry
-            print("You did not pass a 2captcha key. Please solve the captcha manually.")
+            
             elem = driver.find_element_by_class_name("g-recaptcha")
             driver.execute_script("arguments[0].scrollIntoView(true);", elem)
             # Waits 1 minute for you to input captcha
             try:
                 WebDriverWait(driver, 60).until(EC.text_to_be_present_in_element_value((By.NAME, "g-recaptcha-response"), ""))
-                print "Solved captcha"
+                print_info("Solved captcha", username)
                 token = driver.execute_script("return grecaptcha.getResponse()")
-                #print ("Recaptcha token: {}".format(token))
-                activateUser(api, token)
+                driver.close()
+                print_debug("Recaptcha token: {}".format(token))
+                activateUser(api, token, username)
                 time.sleep(1)
             except TimeoutException, err:
-                print("Timed out while manually solving captcha")
+                print_info("Timed out while manually solving captcha", username)
         else:
             # Now to automatically handle captcha
-            print("Starting autosolve recaptcha")
+            print_info("Starting autosolve recaptcha", username)
             html_source = driver.page_source
             gkey_index = html_source.find("https://www.google.com/recaptcha/api2/anchor?k=") + 47
             gkey = html_source[gkey_index:gkey_index+40]
@@ -113,17 +178,17 @@ def solveCaptchas(mode, username, password, location, captchakey2):
             captchaid = recaptcharesponse[3:]
             recaptcharesponse = "CAPCHA_NOT_READY"
             elem = driver.find_element_by_class_name("g-recaptcha")
-            print"We will wait 10 seconds for captcha to be solved by 2captcha"
+            print_info("We will wait 10 seconds for captcha to be solved by 2captcha", username)
             start_time = time.clock()
             timedout = False
             while recaptcharesponse == "CAPCHA_NOT_READY":
                 time.sleep(10)            
                 elapsedtime = time.clock() - start_time
                 if elapsedtime > captchatimeout:
-                    print("Captcha timeout reached. Exiting.")
+                    print_info("Captcha timeout reached. Exiting.", username)
                     timedout = True
                     break
-                print "Captcha still not solved, waiting another 10 seconds."
+                print_info("Captcha still not solved, waiting another 10 seconds.", username)
                 recaptcharesponse = "Failed"
                 while(recaptcharesponse == "Failed"):
                     recaptcharesponse = openurl("http://2captcha.com/res.php?key=" + captchakey2 + "&action=get&id=" + captchaid)
@@ -133,23 +198,46 @@ def solveCaptchas(mode, username, password, location, captchakey2):
                 elem = driver.find_element_by_name("g-recaptcha-response")
                 elem = driver.execute_script("arguments[0].style.display = 'block'; return arguments[0];", elem)
                 elem.send_keys(solvedcaptcha)      
-                print "Solved captcha"                          
+                print_info("Solved captcha", username)
             token = driver.execute_script("return grecaptcha.getResponse()")
             
             
-            activateUser(api, token)
-    
-with open(csv_file, 'r') as f:
-    for num, line in enumerate(f, 1):
-        if len(line) == 0 or line.startswith('#'):
-            continue
-        num_fields = line.count(',') + 1
-        fields = line.split(",")
-        if num_fields == 3:
-            solveCaptchas(fields[0], fields[1], fields[2].replace('\n', '').replace('\r', ''), loc, captchakey2)
-        if num_fields == 2:
-            solveCaptchas("ptc", fields[0], fields[1].replace('\n', '').replace('\r', ''), loc, captchakey2)
+            activateUser(api, token, username)
 
-time.sleep(10)
+config = init_config()
+if not config:
+    exit()
+
+if not config.accountcsv:
+    try:
+        solveCaptchas(config.auth_service, config.username, config.password, config.location, config.captchakey)
+    except:
+        print_error("Unhandled exception.")
+        print_debug("sys.exc_info()[0]: {}".format(sys.exc_info()[0]))
+else:    
+    with open(config.accountcsv, 'r') as f:
+        for num, line in enumerate(f, 1):
+            if len(line) == 0 or line.startswith('#'):
+                continue
+            num_fields = line.count(',') + 1
+            fields = line.split(",")
+
+            #if True:
+            try:
+                username = ""
+                if num_fields == 3:
+                    username = fields[1]
+                    solveCaptchas(fields[0], fields[1], fields[2].replace('\n', '').replace('\r', ''), config.location, config.captchakey)
+                if num_fields == 2:
+                    username = fields[0]
+                    solveCaptchas("ptc", fields[0], fields[1].replace('\n', '').replace('\r', ''), config.location, config.captchakey)
+            except:
+                print_error("Unhandled exception. Skipping to next account.")
+                print_debug("sys.exc_info()[0]: {}".format(sys.exc_info()[0]))
+            
+
+
+#time.sleep(10)
+
 
 	

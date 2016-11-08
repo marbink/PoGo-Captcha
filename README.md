@@ -1,21 +1,40 @@
 # PoGo-Catpcha
 
-# STILL NOT STABLE. USE AT YOUR OWN RISK.
+# STILL NOT 100% STABLE. USE AT YOUR OWN RISK.
 Tested on Windows.
 
 # Todo
-- Test it. A lot.
-- Clean code.
-- Improve error management.
-- Anything else to improve it.
+- (WIP, no ETA) Implement the ability to save logs in a file & split accounts in different files to obtain three files: a file containing all the account that didn't had a captcha, a file with all the account that had a captcha and it has been solved, and a file containing all the accounts who had any sort of issue (login/captcha solving or anything else)
 
 # Requirements
 - pip install -r requirements.txt
 - Don't forget Chromedriver & PhantomJS (follow Pikaptcha guide)
 
 # How to use
-- Put accounts in accounts.csv like the example "ptc,username,password"
-- (Optionally) Edit PY file to edit location & 2captcha key (lines 17 & 18)
+```
+  -h, --help            show this help message and exit
+  -ac ACCOUNTCSV, --accountcsv ACCOUNTCSV
+                        Load accounts from CSV file containing
+                        "auth_service,username,password" lines
+  -a AUTH_SERVICE, --auth_service AUTH_SERVICE
+                        Auth Service ('ptc' or 'google')
+  -u USERNAME, --username USERNAME
+                        Username
+  -p PASSWORD, --password PASSWORD
+                        Password
+  -l LOCATION, --location LOCATION
+                        Location
+  -px PROXY, --proxy PROXY
+                        Specify a socks5 proxy url
+  -c CAPTCHAKEY, --captchakey CAPTCHAKEY
+                        2Captcha Api Key
+  -v, --verbose         Show debug messages
+```
+
+# Known issues
+Someone is experiencing issues with selenium/phatomjs/chromedriver. Try with different versions of these.
+Someone experienced issues running Python x86. Solved installing x64.
 
 # Credits
 Mainly based on Pikaptcha script for solving captcha. Improved adding new 'pageurl' parameter requested by 2captcha.
+Thanks to Chrales & eskof76 for ideas, tests and coding help.
