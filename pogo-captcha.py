@@ -2,13 +2,12 @@ import time
 import string
 import argparse
 from pgoapi import PGoApi
-#from pgoapi import utilities as util
-from pgoapi.exceptions import AuthException #, ServerSideRequestThrottlingException, NotLoggedInException
+from pgoapi.exceptions import AuthException
 from selenium import webdriver
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.by import By
-from selenium.common.exceptions import TimeoutException #, StaleElementReferenceException
+from selenium.common.exceptions import TimeoutException
 from selenium.webdriver.common.desired_capabilities import DesiredCapabilities
 import urllib2
 import sys
@@ -77,17 +76,13 @@ def openurl(address):
 
 def activateUser(api, captchatoken, username):
     print_debug("Recaptcha token: {}".format(captchatoken), username)
-    req = api.create_request()
-    req.verify_challenge(token = captchatoken)
-    response = (":".join("{:02x}".format(ord(c)) for c in captchatoken))
-    response = req.call()
+    response = api.verify_challenge(token = captchatoken)
     print_debug("Response:{}".format(response), username)
 
 
 def solveCaptchas(mode, username, password, location, captchakey2):
     captchatimeout=1000
     max_login_retries = 5
-    #login_retry = 0
     user_agent = ("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_8_4) " + "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/29.0.1547.57 Safari/537.36")
     
     location = location.replace(" ", "")
@@ -118,12 +113,10 @@ def solveCaptchas(mode, username, password, location, captchakey2):
                 time.sleep(args.login_delay)
 
     print_info("Login OK [{num} attempt(s)]".format(num = (i + 1)), username)
-    
 
     time.sleep(10)
-    req = api.create_request()
-    req.check_challenge()
-    response = req.call()
+    response = api.check_challenge()
+    
     captcha_url = None
 
     try:
@@ -145,8 +138,12 @@ def solveCaptchas(mode, username, password, location, captchakey2):
             driver = webdriver.PhantomJS(desired_capabilities=dcap)
         else:
             print_info("You did not pass a 2captcha key. Please solve the captcha manually.", username)
-            driver = webdriver.Chrome()
-            driver.set_window_size(600, 600)
+            try:
+                driver = webdriver.Chrome()
+                driver.set_window_size(600, 600)
+            except Exception:
+                print_error("Chromedriver seems to have some problem. Do you have the latest version?")
+                return
             
         driver.get(captcha_url)
         
