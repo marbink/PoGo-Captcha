@@ -1,4 +1,4 @@
-# PoGo-Catpcha
+# PoGo-Captcha
 
 # STILL NOT 100% STABLE. USE AT YOUR OWN RISK.
 Tested on Windows.
