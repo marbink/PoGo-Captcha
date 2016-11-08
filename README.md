@@ -3,6 +3,9 @@
 # STILL NOT 100% STABLE. USE AT YOUR OWN RISK.
 Tested on Windows.
 
+# Important Additional Notes
+- Proxy function not tested!
+
 # Todo
 - (WIP, no ETA) Implement the ability to save logs in a file & split accounts in different files to obtain three files: a file containing all the account that didn't had a captcha, a file with all the account that had a captcha and it has been solved, and a file containing all the accounts who had any sort of issue (login/captcha solving or anything else)
 - Implement PGM config.ini reading to import accounts
@@ -40,4 +43,4 @@ Someone experienced issues running Python x86. Solved installing x64.
 
 # Credits
 Mainly based on Pikaptcha script for solving captcha. Improved adding new 'pageurl' parameter requested by 2captcha.
-Thanks to Chrales & eskof76 for ideas, tests and coding help.
+Thanks to Chrales & Fokse for ideas, tests and coding help.
