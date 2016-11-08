@@ -114,7 +114,7 @@ def solveCaptchas(mode, username, password, location, captchakey2):
 
     print_info("Login OK [{num} attempt(s)]".format(num = (i + 1)), username)
 
-    time.sleep(10)
+    time.sleep(1)
     response = api.check_challenge()
     
     captcha_url = None
