@@ -55,7 +55,7 @@ def print_info(string, username = None):
     else:
         print("[ INFO] {data}".format(data = string))
         
-def print_error(string):
+def print_error(string, username = None):
     if username:
         print("[ERROR][{user}] {data}".format(user = username, data = string))
     else:
