@@ -112,7 +112,7 @@ def solveCaptchas(mode, username, password, location, captchakey2):
                 return
             else:
                 i += 1
-                print_error('Failed to login to Pokemon Go with account %s. Trying again in 10 seconds', username)
+                print_error('Failed to login. Trying again in 10 seconds. Check the account if this error persist.', username)
                 time.sleep(10)
 
     print_info("Login OK [{num} attempt(s)]".format(num = (i + 1)), username)
