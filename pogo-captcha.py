@@ -56,7 +56,10 @@ def print_info(string, username = None):
         print("[ INFO] {data}".format(data = string))
         
 def print_error(string):
-    print("[ERROR] {data}".format(data = string))
+    if username:
+        print("[ERROR][{user}] {data}".format(user = username, data = string))
+    else:
+        print("[ERROR] {data}".format(data = string))
 
               
 def openurl(address):
@@ -109,7 +112,7 @@ def solveCaptchas(mode, username, password, location, captchakey2):
                 return
             else:
                 i += 1
-                log.error('Failed to login to Pokemon Go with account %s. Trying again in 10 seconds', username)
+                print_error('Failed to login to Pokemon Go with account %s. Trying again in 10 seconds', username)
                 time.sleep(10)
 
     print_info("Login OK [{num} attempt(s)]".format(num = (i + 1)), username)
@@ -208,9 +211,9 @@ if not config:
 if not config.accountcsv:
     try:
         solveCaptchas(config.auth_service, config.username, config.password, config.location, config.captchakey)
-    except:
+    except Exception, e:
         print_error("Unhandled exception.")
-        print_debug("sys.exc_info()[0]: {}".format(sys.exc_info()[0]))
+        print_debug(repr(e), username)
 else:    
     with open(config.accountcsv, 'r') as f:
         for num, line in enumerate(f, 1):
@@ -229,12 +232,9 @@ else:
                     solveCaptchas("ptc", fields[0], fields[1].replace('\n', '').replace('\r', ''), config.location, config.captchakey)
             except Exception, e:
                 print_error("Unhandled exception. Skipping to next account.")
-                #print_debug("{}".format(sys.exc_info()[0]))
                 print_debug(repr(e), username)
             
 
-
-#time.sleep(10)
 
 
 	
