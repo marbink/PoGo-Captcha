@@ -104,13 +104,13 @@ def solveCaptchas(mode, username, password, location, captchakey2):
                 api.set_authentication(provider=mode, username=username, password=password)
             break
         except AuthException:
-            if i >= args.login_retries:
+            if i >= max_login_retries:
                 print_info('Exceeded login attempts. Skipping to next account.', username)
                 return
             else:
                 i += 1
-                log.error('Failed to login to Pokemon Go with account %s. Trying again in %g seconds', account['username'], args.login_delay)
-                time.sleep(args.login_delay)
+                log.error('Failed to login to Pokemon Go with account %s. Trying again in 10 seconds', username)
+                time.sleep(10)
 
     print_info("Login OK [{num} attempt(s)]".format(num = (i + 1)), username)
 
@@ -218,19 +218,19 @@ else:
                 continue
             num_fields = line.count(',') + 1
             fields = line.split(",")
+            username = ""
 
-            #if True:
-            try:
-                username = ""
+            try:                
                 if num_fields == 3:
                     username = fields[1]
                     solveCaptchas(fields[0], fields[1], fields[2].replace('\n', '').replace('\r', ''), config.location, config.captchakey)
                 if num_fields == 2:
                     username = fields[0]
                     solveCaptchas("ptc", fields[0], fields[1].replace('\n', '').replace('\r', ''), config.location, config.captchakey)
-            except:
+            except Exception, e:
                 print_error("Unhandled exception. Skipping to next account.")
-                print_debug("sys.exc_info()[0]: {}".format(sys.exc_info()[0]))
+                #print_debug("{}".format(sys.exc_info()[0]))
+                print_debug(repr(e), username)
             
 
 
