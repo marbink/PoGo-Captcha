@@ -1,4 +1,4 @@
 requests[security]==2.10.0
 six==1.10.0
 selenium==2.53.6
-git+https://github.com/pogodevorg/pgoapi.git#egg=pgoapi
+git+https://github.com/pogodevorg/pgoapi.git@develop#egg=pgoapi

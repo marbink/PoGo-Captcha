@@ -23,6 +23,7 @@ def init_config():
     parser.add_argument('-ac', '--accountcsv',
                         help='Load accounts from CSV file containing "auth_service,username,passwd" lines')
     parser.add_argument("-a", "--auth_service", help="Auth Service ('ptc' or 'google')")
+    parser.add_argument("-hk", "--hash_key", help="Bossland Hash Key")
     parser.add_argument("-u", "--username", help="Username")
     parser.add_argument("-p", "--password", help="Password")
     parser.add_argument("-l", "--location", help="Location", required=True)
@@ -33,8 +34,8 @@ def init_config():
 
     # Checking arguments
     if not config.accountcsv:
-        if not (config.username and config.password and config.auth_service):
-            parser.error("-ac/--accountcsv parameter or -u/--username + -p/--password + -a/--auth_service CANNOT be empty")
+        if not (config.username and config.password and config.auth_service and config.hash_key):
+            parser.error("-ac/--accountcsv parameter or -u/--username + -p/--password + -a/--auth_service + -hk/--hash_key CANNOT be empty")
         else:
             if config.auth_service not in ['ptc', 'google']:
                 parser.error("Invalid auth service specified! ('ptc' or 'google')")
@@ -95,6 +96,7 @@ def solveCaptchas(mode, username, password, location, captchakey2):
         location = location.split(",")
 
         api = PGoApi()
+        api.activate_hash_server(config.hash_key)
         if config.proxy:
             api.set_proxy({'http': config.proxy, 'https': config.proxy}) #Need this? Proxy is not setted with set_authentication?
         api.set_position(float(location[0]), float(location[1]), 0.0)
