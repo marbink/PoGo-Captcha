@@ -7,6 +7,7 @@ from selenium import webdriver
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.by import By
+from selenium.webdriver.chrome.options import Options
 from selenium.common.exceptions import TimeoutException
 from selenium.webdriver.common.desired_capabilities import DesiredCapabilities
 import urllib2
@@ -29,17 +30,18 @@ def init_config():
     parser.add_argument("-l", "--location", help="Location", required=True)
     parser.add_argument("-px", "--proxy", help="Specify a socks5 proxy url", default=False)
     parser.add_argument("-c", "--captchakey", help="2Captcha Api Key", default="")
+    parser.add_argument("-ch", "--chromedir", help="Path to chrome binary", default="")
     parser.add_argument("-v", "--verbose", help="Show debug messages", action='store_true')
     config = parser.parse_args()
 
     # Checking arguments
     if not config.accountcsv:
-        if not (config.username and config.password and config.auth_service and config.hash_key):
-            parser.error("-ac/--accountcsv parameter or -u/--username + -p/--password + -a/--auth_service + -hk/--hash_key CANNOT be empty")
+        if not (config.username and config.password and config.auth_service):
+            parser.error("-ac/--accountcsv parameter or -u/--username + -p/--password + -a/--auth_service CANNOT be empty")
         else:
             if config.auth_service not in ['ptc', 'google']:
                 parser.error("Invalid auth service specified! ('ptc' or 'google')")
-
+ 
     return config
 
 
@@ -96,7 +98,8 @@ def solveCaptchas(mode, username, password, location, captchakey2):
         location = location.split(",")
 
         api = PGoApi()
-        api.activate_hash_server(config.hash_key)
+        if not config.hash_key is None:
+            api.activate_hash_server(config.hash_key)
         if config.proxy:
             api.set_proxy({'http': config.proxy, 'https': config.proxy}) #Need this? Proxy is not setted with set_authentication?
         api.set_position(float(location[0]), float(location[1]), 0.0)
@@ -146,7 +149,10 @@ def solveCaptchas(mode, username, password, location, captchakey2):
             else:
                 print_info("You did not pass a 2captcha key. Please solve the captcha manually.", username)
                 try:
-                    driver = webdriver.Chrome()
+                    chrome_options = Options()
+                    if not config.chromedir is None:
+                        chrome_options.binary_location = config.chromedir
+                    driver = webdriver.Chrome(chrome_options=chrome_options)
                     driver.set_window_size(600, 600)
                 except Exception:
                     print_error("Chromedriver seems to have some problem. Do you have the latest version?")
