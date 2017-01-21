@@ -1,6 +1,6 @@
 # PoGo-Captcha
 Tool to simplify captcha solving on your accounts. Can be used for both manual and automatic solving (using 2captcha).
-It supports proxies and 0.51 hash server.
+It supports proxies and hash server.
 
 # Todo
 - Implement the ability to save logs in a file & split accounts in different files to obtain three files: a file containing all the account that didn't had a captcha, a file with all the account that had a captcha and it has been solved, and a file containing all the accounts who had any sort of issue (login/captcha solving or anything else)
