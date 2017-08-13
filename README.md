@@ -1,4 +1,5 @@
-# PoGo-Captcha
+# PoGo-Captcha [Discontinued]
+# It requires a rewrite because of the wrong requests flow. I won't do it as actually all the apps already handle captchas.
 Tool to simplify captcha solving on your accounts. Can be used for both manual and automatic solving (using 2captcha).
 It supports proxies and hash server.
 
